@@ -3,12 +3,14 @@
 import time
 import numpy as np
 from PIL import Image, ImageTk
-from Tkinter import Frame, Tk, BOTH, X, Y, RIGHT, LEFT
+from Tkinter import Frame, Tk, BOTH, X, Y, RIGHT, LEFT, Text, INSERT
 from ttk import Button, Entry, Label, Combobox
 from matplotlib import cm
 
 
 class MainFrame(Frame):
+
+    TOP_FRAME_BACKGROUND_COLOR = 'gray75'
 
     w_ = 500
     h_ = 400
@@ -27,6 +29,7 @@ class MainFrame(Frame):
         self.img_frame = Frame(self, background='navy')
         self.entry1 = None
         self.entry2 = None
+        self.cb = None
 
         #
         self.init_ui()
@@ -49,24 +52,32 @@ class MainFrame(Frame):
         self.pack(fill=BOTH, expand=True)
 
         # top panel with controls
-        frame_top = Frame(self, background='gray75')
+        frame_top = Frame(self, background=self.TOP_FRAME_BACKGROUND_COLOR)
         frame_top.pack(fill=X)
 
-        cb = Combobox(frame_top, values=('Gaussian', 'Laplace'))
-        cb.current(0)
-        cb.pack(side=LEFT, padx=5, expand=True)
+        self.cb = Combobox(frame_top, values=('Gaussian', 'Laplace'))
+        self.cb.current(0)
+        self.cb.pack(side=LEFT, padx=5, expand=True)
+
+        l1 = Label(frame_top, text=r'Cx', background=self.TOP_FRAME_BACKGROUND_COLOR, width=4)
+        l1.pack(side=LEFT, padx=5, expand=True)
 
         self.entry1 = Entry(frame_top,
                             validate='key',
                             validatecommand=(self.register(self.on_validate),
-                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'))
+                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'),
+                            width=10)
         self.entry1.pack(side=LEFT, padx=5, expand=True)
         self.entry1.insert(0, str(self.a_))
+
+        l1 = Label(frame_top, text=r'Cy', width=4, background=self.TOP_FRAME_BACKGROUND_COLOR)
+        l1.pack(side=LEFT, padx=5)
 
         self.entry2 = Entry(frame_top,
                             validate='key',
                             validatecommand=(self.register(self.on_validate),
-                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'))
+                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'),
+                            width=10)
         self.entry2.pack(side=LEFT, padx=5, expand=True)
         self.entry2.insert(0, str(self.b_))
 
@@ -92,7 +103,7 @@ class MainFrame(Frame):
         :param W: the tk name of the widget
         :return: True/False -> Valid / Invalid
 
-        Found here:
+        Found it here:
             https://stackoverflow.com/questions/4140437/interactively-validating-entry-widget-content-in-tkinter
         Very good answer!
         """
@@ -122,7 +133,7 @@ class MainFrame(Frame):
 
     def init_random_image(self):
         """
-            Init white noise image on the main panel
+            Create a rough surface image from a random noise
         """
         self.update()
 
@@ -151,11 +162,16 @@ class MainFrame(Frame):
         else:
             return
 
-        # this is a gauss filter
-        filter_gauss = np.exp(-np.power(xv, 2) / clx - np.power(yv, 2) / cly)
+        #
+        if self.cb.get().startswith('G'):
+            # Gaussian filter
+            filter_ = np.exp(-np.power(xv, 2) / clx - np.power(yv, 2) / cly)
+        else:
+            # Laplace filter
+            filter_ = np.exp(-np.abs(xv) / clx - np.abs(yv) / cly)
 
         # this is a resulting map
-        random_map = np.fft.ifft2(np.multiply(np.fft.fft2(random_map), np.fft.fft2(filter_gauss)))
+        random_map = np.fft.ifft2(np.multiply(np.fft.fft2(random_map), np.fft.fft2(filter_)))
         random_map = np.real(random_map)
 
         # normalize to [0, 1]
