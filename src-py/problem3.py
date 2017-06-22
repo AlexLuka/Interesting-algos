@@ -13,6 +13,9 @@ class MainFrame(Frame):
     w_ = 500
     h_ = 400
 
+    a_ = 5.
+    b_ = 5.
+
     pad_l = 10
 
     def __init__(self, parent):
@@ -22,6 +25,10 @@ class MainFrame(Frame):
 
         # this is the main frame we are working on
         self.img_frame = Frame(self, background='navy')
+        self.entry1 = None
+        self.entry2 = None
+
+        #
         self.init_ui()
         self.centering()
 
@@ -49,11 +56,19 @@ class MainFrame(Frame):
         cb.current(0)
         cb.pack(side=LEFT, padx=5, expand=True)
 
-        entry1 = Entry(frame_top)
-        entry1.pack(side=LEFT, padx=5, expand=True)
+        self.entry1 = Entry(frame_top,
+                            validate='key',
+                            validatecommand=(self.register(self.on_validate),
+                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'))
+        self.entry1.pack(side=LEFT, padx=5, expand=True)
+        self.entry1.insert(0, str(self.a_))
 
-        entry2 = Entry(frame_top)
-        entry2.pack(side=LEFT, padx=5, expand=True)
+        self.entry2 = Entry(frame_top,
+                            validate='key',
+                            validatecommand=(self.register(self.on_validate),
+                                             '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W'))
+        self.entry2.pack(side=LEFT, padx=5, expand=True)
+        self.entry2.insert(0, str(self.b_))
 
         but1 = Button(frame_top, text='RUN', command=self.button_action)
         but1.pack(side=RIGHT, padx=5, pady=5)
@@ -61,9 +76,49 @@ class MainFrame(Frame):
         # central panel. It will have a label with an image. Image may have a random noise state, or
         # transformed image state
         self.img_frame.pack(fill=BOTH, expand=True)
-
         img_label = Label(self.img_frame, background=None)
         img_label.pack(expand=True, fill=BOTH, padx=5, pady=5)
+
+    def on_validate(self, d, i, P, s, S, v, V, W):
+        """
+        :param d: type of action: 1 - insert, 0 - delete, -1 - other
+        :param i: index of char string to be inserted/deleted, or -1
+        :param P: value of the entry if the edit is allowed
+        :param s: value of entry prior to editing
+        :param S: the text string being inserted or deleted, if any
+        :param v: the type of validation that is currently set
+        :param V: the type of validation that triggered the callback
+                    (key, focusin, focusout, forced)
+        :param W: the tk name of the widget
+        :return: True/False -> Valid / Invalid
+
+        Found here:
+            https://stackoverflow.com/questions/4140437/interactively-validating-entry-widget-content-in-tkinter
+        Very good answer!
+        """
+
+        if d == '1':
+            if W == str(self.entry1):
+                try:
+                    float(s + S)
+                    return True
+                except ValueError:
+                    self.entry1.delete(0, 'end')
+                    self.entry1.insert(0, s)
+
+                    print("Not a number, entry 1")
+                    return False
+            if W == str(self.entry2):
+                try:
+                    float(s + S)
+                    return True
+                except ValueError:
+                    self.entry2.delete(0, 'end')
+                    self.entry2.insert(0, s)
+
+                    print("Not a number, entry 2")
+                    return False
+        return True
 
     def init_random_image(self):
         """
@@ -86,8 +141,15 @@ class MainFrame(Frame):
                              np.linspace(-int(h_ / 2.), int(h_ / 2.), h_))
 
         # define correlation length and width
-        clx = 100
-        cly = 50
+        if len(self.entry1.get()) > 0:
+            clx = float(self.entry1.get())
+        else:
+            return
+
+        if len(self.entry2.get()) > 0:
+            cly = float(self.entry2.get())
+        else:
+            return
 
         # this is a gauss filter
         filter_gauss = np.exp(-np.power(xv, 2) / clx - np.power(yv, 2) / cly)
