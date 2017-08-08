@@ -1,4 +1,4 @@
-# Need a good name for that project
+# Description
 
 Here I am going to keep the algorithms I find interesting.
 Each algorithm is either a solution for some problem or just mini project 
